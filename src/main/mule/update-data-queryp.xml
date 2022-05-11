@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="3a2ca2a7-591c-466d-8ac7-d8cee036af28" doc:description="This application is to update values of MySQL database using query Parameters" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="9324e55c-8ea4-436f-87b3-b38ddd727c47" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Asq@22w0rd#" database="northwind" />
+	</db:config>
+	<flow name="update-data-querypFlow" doc:id="25cf3f6f-a4aa-4ceb-a787-1e3ce669e4e8" >
+		<http:listener doc:name="Listener" doc:id="c0c40c68-83ea-47e9-a7e5-3655522cd858" doc:description="This application is to update values of MySQL database using query Parameters" config-ref="HTTP_Listener_config" path="my-db" allowedMethods="PUT"/>
+		<logger level="INFO" doc:name="Logger" doc:id="ec676514-bf7b-4f63-9cc0-a2f0aac4aed2" message='#["The submitted values of regionId and regiondescription are: " ++ attributes.queryParams.regionId ++ " and " ++ attributes.queryParams.regiondescription]'/>
+		<db:update doc:name="Update MySQL using query parameters" doc:id="894d2877-5460-459b-b1b9-48ff1cbd8932" config-ref="Database_Config">
+			<db:sql ><![CDATA[UPDATE region
+SET regiondescription= :regiondescription
+WHERE regionId= :regionId]]></db:sql>
+			<db:input-parameters ><![CDATA[#[{'regionId': attributes.queryParams.regionId,
+  'regiondescription': attributes.queryParams.regiondescription	
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="6172e5b4-8816-4ce4-84f0-27185afea2b3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	'Message': "Data Updated Successfully!",
+	'Code': 200
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
